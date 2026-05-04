@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  ocr-app:
+    build: .
+    image: rawdoc-pipeline:latest
+    container_name: RawDoc-Pipeline
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    stdin_open: true
+    tty: true
+    command: bash
