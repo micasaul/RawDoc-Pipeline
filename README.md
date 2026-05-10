@@ -33,7 +33,7 @@ Para no tener que escribir comandos largos ni reconstruir la imagen constantemen
 docker compose up -d
 
 # 2. Entrar a la terminal del contenedor
-docker exec -it ocr_uader_dev bash
+docker exec -it RawDoc-Pipeline bash
 
 # 3. Cuando termines de trabajar en el día, para apagarlo:
 docker compose down
