@@ -10,3 +10,9 @@ env/
 # Archivos cacheados de Python
 __pycache__/
 *.pyc
+
+# Resultados de inferencia (imágenes pesadas)
+runs/
+
+# Modelo preentrenado
+*.pt

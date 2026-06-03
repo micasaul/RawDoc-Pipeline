@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ocr-app:
     build: .
@@ -8,6 +6,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./data:/app/data
+      - ./runs:/app/runs
     stdin_open: true
     tty: true
     command: bash
