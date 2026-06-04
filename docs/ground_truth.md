@@ -31,33 +31,34 @@ El conjunto incluye variedad de estructuras: páginas con texto corrido, listas 
 
 ## Categorías de layout esperadas
 
-El modelo YOLOv10s entrenado sobre DocLayNet reconoce las siguientes categorías de regiones dentro de un documento:
+| Categoría YOLO | Descripción | ¿Presente en UADER? | Columna en Excel de Validación |
+|---|---|---|---|
+| **Text** | Bloques de texto corrido (párrafos, considerandos) | Sí, muy frecuente | `TEXTO` |
+| **Section-header** | Encabezados de sección (CONSIDERANDO, RESUELVE, ANEXO) | Sí, frecuente | `SUBTITULO (SH)` |
+| **List-item** | Elementos de lista numerada o con viñetas | Sí, frecuente | `LISTA (ITEMS)` |
+| **Table** | Tablas con datos tabulares | Sí, ocasional | `TABLA` |
+| **Picture** | Imágenes, firmas, sellos, escudos institucionales | Sí, frecuente | `IMAGEN` (Fusionado con "Sellos") |
+| **Title** | Título principal del documento | Sí, ocasional | `TEXTO` (o `SUBTITULO (SH)`) |
+| **Caption** | Epígrafes de tablas o figuras | Sí, poco frecuente | `TEXTO` |
+| **Page-header** | Encabezado de página (membrete) | Sí, frecuente | `P. HEADER` |
+| **Page-footer** | Pie de página (numeración, etc.) | Sí, frecuente | `P. FOOTER` |
+| **Formula** | Fórmulas matemáticas | No aplica | *(Ignorar)* |
+| **Footnote** | Notas al pie | No aplica | *(Ignorar)* |
+| *(Sin detección)* | Páginas vacías / reversos | Sí, ocasional | `HOJA EN BLANCO` |
 
-| Categoría | Descripción | ¿Presente en nuestros documentos? |
-|---|---|---|
-| Text | Bloques de texto corrido (párrafos, considerandos) | Sí, muy frecuente |
-| Section-header | Encabezados de sección (CONSIDERANDO, RESUELVE, ANEXO) | Sí, frecuente |
-| List-item | Elementos de lista numerada o con viñetas | Sí, en articulados y anexos |
-| Table | Tablas con datos tabulares | Sí, en algunas ordenanzas |
-| Picture | Imágenes, firmas, sellos, escudos | Sí, en varias páginas |
-| Title | Título principal del documento | Sí, ocasional |
-| Caption | Epígrafes de tablas o figuras | Sí, poco frecuente |
-| Page-header | Encabezado de página (membrete) | Sí, en algunas páginas |
-| Page-footer | Pie de página (numeración, etc.) | Sí, en varias páginas |
-| Formula | Fórmulas matemáticas | No aplica a estos documentos |
-| Footnote | Notas al pie | No observado |
+## Criterio de referencia y Validación Manual (Ground Truth)
 
-## Criterio de referencia para evaluación
+Para validar cuantitativamente el desempeño de YOLOv10s, el equipo construyó una planilla de Ground Truth manual (denominada **ExperimentoConfianza** y alojada en el Google Drive del proyecto). Siguiendo las directrices del docente orientador, la validación no requiere anotar exhaustivamente las 11 categorías nativas del modelo, sino enfocarse prioritariamente en aquellas **críticas para el pipeline de OCR**:
 
-En esta etapa inicial del proyecto, la evaluación del modelo se realiza de forma **cualitativa**: se observan visualmente las detecciones sobre las imágenes anotadas y se verifica si las regiones marcadas corresponden efectivamente a las categorías asignadas.
+1. **Tablas (`Table`)**: Bloques de datos tabulares que requieren un procesamiento de extracción estructurado especial o exclusión del OCR lineal.
+2. **Imágenes, Firmas y Sellos (`Picture`)**: Regiones que contienen elementos gráficos no textuales (como firmas manuscritas, sellos oficiales o escudos institucionales).
+3. **Páginas en blanco**: Identificadas mediante la ausencia total de detecciones (0 bboxes), esenciales para omitir procesamiento innecesario en el OCR.
+4. **Zonas de texto a extraer**: Agrupadas de manera general (principalmente a través de `Text`, `Section-header` y `List-item`).
 
-No se cuenta todavía con anotaciones manuales en formato COCO o YOLO que permitan calcular métricas como mAP o IoU de forma automática. Esto queda como parte del trabajo a futuro (ver sección correspondiente en el informe).
-
-Para esta entrega, el ground truth consiste en:
-
-1. **La definición del conjunto de documentos** con su procedencia y características.
-2. **La identificación de las categorías esperadas** en función del tipo de contenido de los documentos.
-3. **La revisión visual de una muestra representativa** de resultados para verificar la coherencia de las detecciones.
+### Simplificación y Mapeo en la Planilla de Validación
+Para evitar redundancias operativas, se unificaron las detecciones manuales bajo la misma taxonomía del modelo:
+* **Fusión de Firmas y Sellos en `Picture`**: Inicialmente se planteó registrar las firmas y sellos por separado. No obstante, dado que el modelo preentrenado en DocLayNet detecta firmas, logos y sellos bajo la categoría genérica `Picture`, registrar por separado estas clases en el Excel manual resultaría redundante. Por ende, en la planilla manual se consolidan bajo la columna `Picture` (que representa cualquier elemento gráfico a ignorar por el OCR).
+* **Métricas evaluadas**: Se contrastan las detecciones del script `analisis_resultados.py` frente al conteo manual por página para calcular falsos positivos, verdaderos positivos y F1-Score en diferentes umbrales (0.15, 0.20, 0.25). Esto permite calibrar el clasificador para el inicio de la etapa de extracción de texto.
 
 ## Observaciones sobre la calidad de los documentos
 

@@ -4,8 +4,8 @@ env/
 .env
 
 # Carpetas de datos (No subir PDFs ni imágenes al repo)
-# data/raw/
-# data/processed/
+data/raw/
+data/processed/
 
 # Archivos cacheados de Python
 __pycache__/

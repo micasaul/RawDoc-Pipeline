@@ -1,55 +1,31 @@
-"""
-analisis_resultados.py
-----------------------
-Analiza los resultados de la inferencia YOLO sobre los documentos procesados.
-Recorre las imágenes, ejecuta el modelo y recopila estadísticas por documento
-y por categoría de layout (DocLayNet).
-
-Genera:
-  - Resumen por consola
-  - Archivo JSON con el detalle completo en runs/analisis/reporte.json
-"""
-
 import os
 import json
 from collections import defaultdict
 from ultralytics import YOLO
 
-# ── Rutas ──────────────────────────────────────────────────────────
 base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 processed_folder = os.path.join(base_path, "data", "processed")
 output_folder = os.path.join(base_path, "runs", "analisis")
 model_path = os.path.join(base_path, "yolov10s-doclaynet.pt")
 
 EXTENSIONES_IMAGEN = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp')
-UMBRAL_CONFIANZA = 0.20  # mismo umbral que usamos en la inferencia original
+UMBRAL_CONFIANZA = 0.15
 
 os.makedirs(output_folder, exist_ok=True)
 
-# ── Cargar modelo ──────────────────────────────────────────────────
 print("Cargando modelo YOLOv10s-DocLayNet...")
 model = YOLO(model_path)
-
-# Sacamos los nombres de las clases directamente del modelo
-nombres_clases = model.names  # dict {id: nombre}
+nombres_clases = model.names
 print(f"Clases del modelo: {list(nombres_clases.values())}\n")
 
-# ── Estructuras para acumular datos ────────────────────────────────
-# Conteo global por categoría
 conteo_global = defaultdict(int)
-
-# Confianzas por categoría (para calcular promedio, min, max)
 confianzas_por_clase = defaultdict(list)
-
-# Detalle por documento
 detalle_por_documento = {}
 
-# Contadores generales
 total_paginas = 0
 paginas_sin_deteccion = 0
 total_detecciones = 0
 
-# ── Recorrer subcarpetas ───────────────────────────────────────────
 subfolders = sorted([
     d for d in os.listdir(processed_folder)
     if os.path.isdir(os.path.join(processed_folder, d))
@@ -60,7 +36,6 @@ print("=" * 65)
 
 for subfolder in subfolders:
     subfolder_path = os.path.join(processed_folder, subfolder)
-
     images = sorted([
         f for f in os.listdir(subfolder_path)
         if f.lower().endswith(EXTENSIONES_IMAGEN)
@@ -69,7 +44,6 @@ for subfolder in subfolders:
     if not images:
         continue
 
-    # Contadores del documento actual
     doc_conteo = defaultdict(int)
     doc_confianzas = []
     doc_paginas = len(images)
@@ -77,11 +51,7 @@ for subfolder in subfolders:
 
     for image in images:
         image_path = os.path.join(subfolder_path, image)
-
-        # Inferencia sin guardar imagen (solo nos interesa la data)
         results = model(image_path, conf=UMBRAL_CONFIANZA, verbose=False)
-
-        # Extraer detecciones de la primera (y única) imagen
         boxes = results[0].boxes
 
         if len(boxes) == 0:
@@ -95,18 +65,15 @@ for subfolder in subfolders:
             confianza = float(box.conf[0])
             nombre_clase = nombres_clases[clase_id]
 
-            # Acumular en el documento
             doc_conteo[nombre_clase] += 1
             doc_confianzas.append(confianza)
 
-            # Acumular global
             conteo_global[nombre_clase] += 1
             confianzas_por_clase[nombre_clase].append(confianza)
             total_detecciones += 1
 
         total_paginas += 1
 
-    # Resumen del documento
     doc_total = sum(doc_conteo.values())
     doc_conf_promedio = sum(doc_confianzas) / len(doc_confianzas) if doc_confianzas else 0
 
@@ -118,18 +85,15 @@ for subfolder in subfolders:
         "detecciones_por_clase": dict(doc_conteo)
     }
 
-    # Mostrar en consola
     print(f"\n📄 {subfolder}")
     print(f"   Páginas: {doc_paginas} | Sin detección: {doc_sin_deteccion}")
     print(f"   Detecciones: {doc_total} | Confianza promedio: {doc_conf_promedio:.2f}")
 
-    # Ordenar clases por cantidad descendente
     for clase, cantidad in sorted(doc_conteo.items(), key=lambda x: -x[1]):
         print(f"     - {clase}: {cantidad}")
 
 print("\n" + "=" * 65)
 
-# ── Resumen global ─────────────────────────────────────────────────
 print("\n📊 RESUMEN GLOBAL")
 print(f"   Documentos analizados:   {len(subfolders)}")
 print(f"   Páginas totales:         {total_paginas}")
@@ -152,8 +116,6 @@ for clase, cantidad in sorted(conteo_global.items(), key=lambda x: -x[1]):
     print(f"     {clase:20s}  →  {cantidad:4d} detecciones  "
           f"(conf: prom={prom:.2f}  min={minimo:.2f}  max={maximo:.2f})")
 
-# ── Guardar reporte JSON ───────────────────────────────────────────
-# Estadísticas por clase para el JSON
 estadisticas_clases = {}
 for clase in sorted(conteo_global.keys()):
     confs = confianzas_por_clase[clase]
@@ -181,7 +143,7 @@ reporte = {
     "detalle_por_documento": detalle_por_documento
 }
 
-ruta_reporte = os.path.join(output_folder, "reporte.json")
+ruta_reporte = os.path.join(output_folder, f"reporte_conf_{UMBRAL_CONFIANZA:.2f}.json")
 with open(ruta_reporte, "w", encoding="utf-8") as f:
     json.dump(reporte, f, indent=2, ensure_ascii=False)
 

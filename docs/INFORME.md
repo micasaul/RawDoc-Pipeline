@@ -1,12 +1,19 @@
-# RawDoc-Pipeline: Detección de Layout en Documentos Universitarios
+# Avance N°1 Trabajo Final — RawDoc-Pipeline
+
+**Cátedra:** Inteligencia Artificial  
+**Equipo Docente:** Dr. Daniela Lopez De Luise, Lic. Alejando Perez  
+**Institución:** FCyT - Sede Concepción del Uruguay (UADER)  
 
 ## Integrantes y Roles
 
-* **Axel Blanc** — Responsable de Testing (validación manual y evaluación de resultados).
-* **Donato De Battista** — Responsable del Código (implementación del pipeline de detección y análisis).
-* **Benjamín Ayala** — Responsable de Arquitectura (entorno Docker, preprocesamiento y diseño del pipeline).
-* **Ximena Carmona** — Responsable de Documentación (redacción del informe técnico y ground truth).
-* **Micaela Saul** — Responsable del Repositorio (gestión de Git, organización de archivos y estructura del proyecto).
+* **Ayala Benjamín** — Responsable de Arquitectura
+* **Blanc Axel** — Responsable de Testing
+* **Carmona Ximena** — Responsable de Documentación
+* **De Battista Donato** — Responsable del Código
+* **Saül Micaela** — Responsable del Repositorio
+
+---
+
 
 
 ## 1. Introducción
@@ -125,14 +132,80 @@ python src/analisis_resultados.py
 
 ## 5. Conjunto de referencia
 
-Para la evaluación del pipeline, se configuró un repositorio de archivos de proceso compuesto por **10 documentos reales** de la Universidad Autónoma de Entre Ríos (UADER), divididos equitativamente en 5 ordenanzas y 5 resoluciones. Este corpus suma un total de **148 páginas** digitalizadas en formato PDF, almacenadas de forma local en `data/raw/` (excluidas del control de versiones por su volumen y privacidad).
+Para la evaluación del pipeline, se configuró un repositorio de archivos de proceso compuesto por **10 documentos reales** de la Universidad Autónoma de Entre Ríos (UADER), divididos equitativamente en 5 ordenanzas y 5 resoluciones emitidas por el Consejo Superior. Los documentos fueron descargados desde el portal institucional oficial en formato PDF y almacenados localmente en `data/raw/` (excluidos del control de versiones por cuestiones de volumen y privacidad).
 
-El detalle cualitativo de la procedencia, la composición del conjunto de prueba y la especificación formal de las categorías esperadas se documenta en [ground_truth.md](file:///c:/Users/benja/Proyectos/Documentos/4°Lic.Sistemas/IA-PRACTICE/Proyecto_ocr_uader/docs/ground_truth.md). Los documentos cubren estructuras sumamente diversas:
-- Páginas de texto continuo (decretos, considerandos).
-- Artículos estructurados como listas numeradas.
-- Tablas presupuestarias y formularios administrativos complejos.
-- Firmas manuscritas y sellos institucionales escaneados.
-- Páginas vacías correspondientes a reversos de hojas escaneadas.
+El corpus utilizado suma un total de 148 páginas digitalizadas y representa un caso de uso real orientado a la digitalización y estructuración automática de actos administrativos universitarios. Los documentos seleccionados corresponden a:
+* **Ordenanzas del Consejo Superior** (prefijo ORD-CS), vinculadas a normativas de alcance general.
+* **Resoluciones del Consejo Superior** (prefijo Res-CS), asociadas a disposiciones específicas y administrativas.
+
+La composición del conjunto de referencia se detalla a continuación:
+
+| Documento | Tipo | Páginas |
+| :--- | :--- | :--- |
+| ORD-185 | Ordenanza | 8 |
+| ORD-CS-186-25 | Ordenanza | 20 |
+| ORD-CS-N°-187 | Ordenanza | 24 |
+| ORD-CS-N°-188-25 | Ordenanza | 20 |
+| ORD-CS-N°-189-comprimido | Ordenanza | 56 |
+| Res-CS-054-25-27-03-2025 | Resolución | 2 |
+| Res-CS-055-25-27-03-2025 | Resolución | 8 |
+| Res-CS-056-25-27-03-2025 | Resolución | 2 |
+| Res-CS-073-25-27-03-2025 | Resolución | 4 |
+| Res-CS-078-25-27-03-2025 | Resolución | 4 |
+
+**Total: 10 documentos y 148 páginas.**
+
+Los documentos cubren estructuras sumamente diversas, incluyendo:
+* Páginas de texto continuo.
+* Artículos estructurados como listas numeradas.
+* Tablas presupuestarias y formularios administrativos complejos.
+* Firmas manuscritas y sellos institucionales escaneados.
+* Encabezados y pies de página administrativos.
+* Páginas vacías correspondientes a reversos de hojas escaneadas.
+
+El modelo utilizado corresponde a YOLOv10s entrenado sobre el dataset DocLayNet, el cual reconoce distintas categorías de regiones documentales, entre ellas: Section-header, List-item, Text, Table, Picture, Title, Caption, Page-header y Page-footer.
+
+A partir de estas categorías generales, el grupo de trabajo definió además un conjunto de observaciones específicas orientadas a las características propias de los documentos institucionales analizados.
+
+Con el objetivo de complementar las categorías originales del modelo y realizar un análisis más cercano al dominio documental universitario, se elaboró una planilla experimental de observación manual donde se registraron distintos elementos presentes en las páginas procesadas. Entre ellos:
+* Firmas manuscritas.
+* Sellos institucionales.
+* Logos y escudos.
+* Perforaciones de hojas escaneadas.
+* Manchas o ruido visual.
+* Páginas en blanco.
+* Bullets y elementos de listas.
+* Imágenes y tablas detectadas.
+
+En varios casos, estas observaciones representan subdivisiones o interpretaciones específicas de categorías más amplias definidas por DocLayNet. Por ejemplo:
+
+| Categoría experimental | Categoría equivalente en DocLayNet / YOLO |
+| :--- | :--- |
+| Firmas | Picture |
+| Sellos | Picture |
+| Logos / escudos | Picture |
+| Imágenes | Picture |
+| Bullets / listas | List-item |
+| Tablas | Table |
+| Encabezados administrativos | Page-header |
+| Pies de página | Page-footer |
+| Títulos | Title |
+| Secciones | Section-header |
+| Páginas en blanco | Ausencia de detecciones |
+
+De esta manera, el análisis experimental permitió complementar la salida estándar del modelo con observaciones cualitativas específicas del contexto institucional analizado.
+
+Se inspeccionaron visualmente las detecciones generadas sobre una muestra representativa de documentos, verificando la coherencia entre las regiones detectadas y el contenido real presente en las páginas.
+
+Asimismo, se realizaron pruebas variando distintos umbrales de confianza del modelo para analizar el comportamiento de las detecciones frente a documentos con diferente complejidad visual. Los resultados obtenidos fueron registrados en una planilla comparativa desarrollada por el equipo.
+
+**Planilla de experimentación y resultados:**
+[Link a la Planilla de Google Drive](https://drive.google.com/drive/folders/1kYo2ub-nWprr1Qtbfn0VeK4u5KWdpAm_)
+
+Entre las observaciones más relevantes identificadas durante el análisis se destacan:
+* Las resoluciones poseen una estructura más uniforme y predecible, generalmente compuesta por texto administrativo y firmas institucionales.
+* Algunas páginas corresponden a reversos en blanco de escaneos doble faz, las cuales fueron correctamente interpretadas por el modelo mediante ausencia de detecciones.
+* La calidad del escaneo varía significativamente entre documentos, existiendo casos con buena resolución y otros con leve inclinación, compresión o pérdida de nitidez.
 
 ## 6. Resultados preliminares
 
