@@ -9,7 +9,7 @@ output_folder = os.path.join(base_path, "runs", "analisis")
 model_path = os.path.join(base_path, "yolov10s-doclaynet.pt")
 
 EXTENSIONES_IMAGEN = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp')
-UMBRAL_CONFIANZA = 0.15
+UMBRAL_CONFIANZA = 0.20
 
 os.makedirs(output_folder, exist_ok=True)
 

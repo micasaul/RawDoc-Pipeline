@@ -48,7 +48,7 @@ El conjunto incluye variedad de estructuras: páginas con texto corrido, listas 
 
 ## Criterio de referencia y Validación Manual (Ground Truth)
 
-Para validar cuantitativamente el desempeño de YOLOv10s, el equipo construyó una planilla de Ground Truth manual (denominada **ExperimentoConfianza** y alojada en el Google Drive del proyecto). Siguiendo las directrices del docente orientador, la validación no requiere anotar exhaustivamente las 11 categorías nativas del modelo, sino enfocarse prioritariamente en aquellas **críticas para el pipeline de OCR**:
+Para validar cuantitativamente el desempeño de YOLOv10s, el equipo construyó una planilla de Ground Truth manual (denominada **[ExperimentoConfianza](https://docs.google.com/spreadsheets/d/1auYnDuoBU9F2DGiNMLovTlKGoXOYFVR43KZiilfujnU/edit?usp=sharing)**). Siguiendo las directrices del docente orientador, la validación no requiere anotar exhaustivamente las 11 categorías nativas del modelo, sino enfocarse prioritariamente en aquellas **críticas para el pipeline de OCR**:
 
 1. **Tablas (`Table`)**: Bloques de datos tabulares que requieren un procesamiento de extracción estructurado especial o exclusión del OCR lineal.
 2. **Imágenes, Firmas y Sellos (`Picture`)**: Regiones que contienen elementos gráficos no textuales (como firmas manuscritas, sellos oficiales o escudos institucionales).
