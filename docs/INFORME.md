@@ -53,9 +53,9 @@ Los resultados se guardan como imágenes anotadas (con los bounding boxes dibuja
 
 ### Etapa 3: Análisis de resultados (src/analisis_resultados.py)
 Re-ejecuta la inferencia sobre las imágenes para recopilar estadísticas detalladas. Genera un reporte en formato JSON (runs/análisis/reporte.json) que incluye:
-● Cantidad de detecciones por categoría de layout
-● Estadísticas de confianza (promedio, mínimo, máximo) por categoría
-● Desglose por documento
+* Cantidad de detecciones por categoría de layout
+* Estadísticas de confianza (promedio, mínimo, máximo) por categoría
+* Desglose por documento
 
 # 3. Entorno de ejecución
 
@@ -65,15 +65,15 @@ Para garantizar reproducibilidad, el proyecto incluye un Dockerfile y un docker-
 **Imagen base:** python:3.10-slim (Debian)
 
 **Dependencias de sistema:**
-● tesseract-ocr y tesseract-ocr-spa: motor OCR con soporte para español (para etapas futuras).
-● poppler-utils: renderizado de PDFs a imágenes.
-● libgl1, libglib2.0-0: dependencias de OpenCV que necesitan Ultralytics.
+* tesseract-ocr y tesseract-ocr-spa: motor OCR con soporte para español (para etapas futuras).
+* poppler-utils: renderizado de PDFs a imágenes.
+* libgl1, libglib2.0-0: dependencias de OpenCV que necesitan Ultralytics.
 
 **Dependencias Python** (vía requirements.txt):
-● pdf2image 1.17.0: wrapper de Poppler para Python.
-● pillow 12.2.0: la manipulación de imágenes.
-● pytesseract 0.3.13: wrapper de Tesseract para Python.
-● ultralytics: framework de YOLO (incluye YOLOv10).
+* pdf2image 1.17.0: wrapper de Poppler para Python.
+* pillow 12.2.0: la manipulación de imágenes.
+* pytesseract 0.3.13: wrapper de Tesseract para Python.
+* ultralytics: framework de YOLO (incluye YOLOv10).
 
 ## 3.2 Volúmenes
 El docker-compose mapea tres directorios entre el host y el contenedor:
