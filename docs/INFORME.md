@@ -109,8 +109,8 @@ python src/analisis_resultados.py
 Para la evaluación del pipeline, se configuró un repositorio de archivos de proceso compuesto por 10 documentos reales de la Universidad Autónoma de Entre Ríos (UADER), divididos equitativamente en 5 ordenanzas y 5 resoluciones emitidas por el Consejo Superior. Los documentos fueron descargados desde el portal institucional oficial en formato PDF y almacenados localmente en data/raw/.
 
 El corpus utilizado suma un total de 148 páginas digitalizadas y representa un caso de uso real orientado a la digitalización y estructuración automática de actos administrativos universitarios. Los documentos seleccionados corresponden a:
-● Ordenanzas del Consejo Superior (prefijo ORD-CS), vinculadas a normativas de alcance general.
-● Resoluciones del Consejo Superior (prefijo Res-CS), asociadas a disposiciones específicas y administrativas.
+* **Ordenanzas del Consejo Superior** (prefijo ORD-CS), vinculadas a normativas de alcance general.
+* **Resoluciones del Consejo Superior** (prefijo Res-CS), asociadas a disposiciones específicas y administrativas.
 
 La composición del conjunto de referencia se detalla a continuación:
 
@@ -130,26 +130,26 @@ La composición del conjunto de referencia se detalla a continuación:
 **Total: 10 documentos y 148 páginas.**
 
 Los documentos cubren estructuras sumamente diversas, incluyendo:
-● Páginas de texto continuo.
-● Artículos estructurados como listas numeradas.
-● Tablas presupuestarias y formularios administrativos complejos.
-● Firmas manuscritas y sellos institucionales escaneados.
-● Encabezados y pies de página administrativos.
-● Páginas vacías correspondientes a reversos de hojas escaneadas.
+* Páginas de texto continuo.
+* Artículos estructurados como listas numeradas.
+* Tablas presupuestarias y formularios administrativos complejos.
+* Firmas manuscritas y sellos institucionales escaneados.
+* Encabezados y pies de página administrativos.
+* Páginas vacías correspondientes a reversos de hojas escaneadas.
 
 El modelo utilizado corresponde a YOLOv10s entrenado sobre el dataset DocLayNet, el cual reconoce distintas categorías de regiones documentales, entre ellas: Section-header, List-item, Text, Table, Picture, Title, Caption, Page-header y Page-footer.
 
 A partir de estas categorías generales, el grupo de trabajo definió además un conjunto de observaciones específicas orientadas a las características propias de los documentos institucionales analizados.
 
 Con el objetivo de complementar las categorías originales del modelo y realizar un análisis más cercano al dominio documental universitario, se elaboró una planilla experimental de observación manual donde se registraron distintos elementos presentes en las páginas procesadas. Entre ellos:
-● Firmas manuscritas.
-● Sellos institucionales.
-● Logos y escudos.
-● Perforaciones de hojas escaneadas.
-● Manchas o ruido visual.
-● Páginas en blanco.
-● Bullets y elementos de listas.
-● Imágenes y tablas detectadas.
+* Firmas manuscritas.
+* Sellos institucionales.
+* Logos y escudos.
+* Perforaciones de hojas escaneadas.
+* Manchas o ruido visual.
+* Páginas en blanco.
+* Bullets y elementos de listas.
+* Imágenes y tablas detectadas.
 
 En varios casos, estas observaciones representan subdivisiones o interpretaciones específicas de categorías más amplias definidas por DocLayNet. Por ejemplo:
 
@@ -177,9 +177,9 @@ Asimismo, se realizaron pruebas variando distintos umbrales de confianza del mod
 [Link a la Planilla de Google Drive](https://docs.google.com/spreadsheets/d/1auYnDuoBU9F2DGiNMLovTlKGoXOYFVR43KZiilfujnU/edit?usp=sharing)
 
 Entre las observaciones más relevantes identificadas durante el análisis se destacan:
-● Las resoluciones poseen una estructura más uniforme y predecible, generalmente compuesta por texto administrativo y firmas institucionales.
-● Algunas páginas corresponden a reversos en blanco de escaneos doble faz, las cuales fueron correctamente interpretadas por el modelo mediante ausencia de detecciones.
-● La calidad del escaneo varía significativamente entre documentos, existiendo casos con buena resolución y otros con leve inclinación, compresión o pérdida de nitidez.
+* Las resoluciones poseen una estructura más uniforme y predecible, generalmente compuesta por texto administrativo y firmas institucionales.
+* Algunas páginas corresponden a reversos en blanco de escaneos doble faz, las cuales fueron correctamente interpretadas por el modelo mediante ausencia de detecciones.
+* La calidad del escaneo varía significativamente entre documentos, existiendo casos con buena resolución y otros con leve inclinación, compresión o pérdida de nitidez.
 
 # 5. Resultados preliminares
 
@@ -203,16 +203,16 @@ De acuerdo con el reporte cuantitativo consolidado en reporte.json, se registrar
 Al revisar visualmente las imágenes anotadas generadas en runs/detect/predict/, se observó lo siguiente:
 
 **Fortalezas del pipeline actual:**
-● Los párrafos normativos y bloques de texto largo se segmentan con alta precisión (confianzas superiores a 0.90).
-● Las listas numeradas (artículos) se aíslan correctamente ítem por ítem.
-● Las tablas se enmarcan como regiones únicas, ideal para su posterior extracción tabular o exclusión.
-● Las páginas en blanco (reversos escaneados) no producen falsas detecciones (se registraron exactamente 6 páginas sin detección de forma correcta).
+* Los párrafos normativos y bloques de texto largo se segmentan con alta precisión (confianzas superiores a 0.90).
+* Las listas numeradas (artículos) se aíslan correctamente ítem por ítem.
+* Las tablas se enmarcan como regiones únicas, ideal para su posterior extracción tabular o exclusión.
+* Las páginas en blanco (reversos escaneados) no producen falsas detecciones (se registraron exactamente 6 páginas sin detección de forma correcta).
 
 **Oportunidades de mejora y limitaciones:**
-● El umbral de 0.20 es bajo y genera algunas detecciones ruidosas de baja confianza (rango 0.21 - 0.30).
-● Escudos o logotipos pequeños se confunden a veces con Text en lugar de Picture.
-● Títulos del Consejo Superior como "ORDENANZA CS Nº..." se catalogan como Text porque visualmente no tienen la prominencia typográfica (fuente gigante o negrita extrema) que el modelo espera para un Title.
-● Algunas firmas desvaídas o con trazos finos no son segmentadas, quedando fuera de la región Picture.
+* El umbral de 0.20 es bajo y genera algunas detecciones ruidosas de baja confianza (rango 0.21 - 0.30).
+* Escudos o logotipos pequeños se confunden a veces con Text en lugar de Picture.
+* Títulos del Consejo Superior como "ORDENANZA CS Nº..." se catalogan como Text porque visualmente no tienen la prominencia typográfica (fuente gigante o negrita extrema) que el modelo espera para un Title.
+* Algunas firmas desvaídas o con trazos finos no son segmentadas, quedando fuera de la región Picture.
 
 ## 5.4 Calibración del Umbral y F1-Score (Evaluación de Confianza)
 Para refinar el comportamiento del modelo, se realizaron experimentos utilizando tres umbrales de confianza (0.15, 0.20 y 0.25), evaluando manualmente la precisión y recall sobre clases clave. Como caso de estudio representativo, se analizó el rendimiento de la detección de la clase Page-footer (pie de página / numeración) en el documento ORD-CS-N°-187 (que cuenta con un Ground Truth real de 23 pies de página esperados):
@@ -250,9 +250,9 @@ El procesamiento se realizó dentro de la imagen de contenedor reproducible del 
 El repositorio se encuentra completamente configurado, con el código modularizado y funcionando bajo una estructura reproducible. A continuación, se detalla la organización de los componentes y el rol de cada pieza de documentación técnica elaborada hasta este punto:
 
 ### Documentación del Proyecto
-● **README.md**: Guía de configuración rápida para desarrolladores, instrucciones de montaje del contenedor Docker y comandos de ejecución paso a paso.
-● **docs/ground_truth.md**: Especificación detallada del corpus documental de referencia y la categorización de layout del dataset DocLayNet.
-● **docs/INFORME.md**: Este documento, el cual recopila el informe técnico de la arquitectura, decisiones de diseño y análisis de resultados de la primera entrega.
+* **README.md**: Guía de configuración rápida para desarrolladores, instrucciones de montaje del contenedor Docker y comandos de ejecución paso a paso.
+* **docs/ground_truth.md**: Especificación detallada del corpus documental de referencia y la categorización de layout del dataset DocLayNet.
+* **docs/INFORME.md**: Este documento, el cual recopila el informe técnico de la arquitectura, decisiones de diseño y análisis de resultados de la primera entrega.
 
 ### Árbol de Directorios
 ```
@@ -280,7 +280,7 @@ RawDoc-Pipeline/
 
 # 8. Referencias
 
-● DocLayNet: A Large-scale Dataset for Document Layout Analysis (Pfitzmann et al., 2022). https://arxiv.org/abs/2206.01062
-● Ultralytics YOLO: https://docs.ultralytics.com/
-● Poppler: https://poppler.freedesktop.org/
-● Tesseract OCR: https://github.com/tesseract-ocr/tesseract
+* DocLayNet: A Large-scale Dataset for Document Layout Analysis (Pfitzmann et al., 2022). https://arxiv.org/abs/2206.01062
+* Ultralytics YOLO: https://docs.ultralytics.com/
+* Poppler: https://poppler.freedesktop.org/
+* Tesseract OCR: https://github.com/tesseract-ocr/tesseract
