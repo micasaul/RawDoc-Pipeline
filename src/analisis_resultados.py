@@ -3,17 +3,25 @@ import json
 from collections import defaultdict
 from ultralytics import YOLO
 
+import argparse
+
+parser = argparse.ArgumentParser(description="Análisis de resultados de inferencia YOLO")
+parser.add_argument("--model", type=str, default="yolov11m-doclaynet.pt", help="Archivo del modelo .pt")
+parser.add_argument("--conf", type=float, default=0.20, help="Umbral de confianza")
+args = parser.parse_args()
+
 base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 processed_folder = os.path.join(base_path, "data", "processed")
 output_folder = os.path.join(base_path, "runs", "analisis")
-model_path = os.path.join(base_path, "yolov10s-doclaynet.pt")
+model_file = args.model
+model_path = os.path.join(base_path, model_file) if not os.path.isabs(model_file) else model_file
 
 EXTENSIONES_IMAGEN = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp')
-UMBRAL_CONFIANZA = 0.20
+UMBRAL_CONFIANZA = args.conf
 
 os.makedirs(output_folder, exist_ok=True)
 
-print("Cargando modelo YOLOv10s-DocLayNet...")
+print(f"Cargando modelo: {model_file}...")
 model = YOLO(model_path)
 nombres_clases = model.names
 print(f"Clases del modelo: {list(nombres_clases.values())}\n")
@@ -25,6 +33,7 @@ detalle_por_documento = {}
 total_paginas = 0
 paginas_sin_deteccion = 0
 total_detecciones = 0
+promedio_global = 0.0
 
 subfolders = sorted([
     d for d in os.listdir(processed_folder)
@@ -54,7 +63,7 @@ for subfolder in subfolders:
         results = model(image_path, conf=UMBRAL_CONFIANZA, verbose=False)
         boxes = results[0].boxes
 
-        if len(boxes) == 0:
+        if boxes is None or len(boxes) == 0:
             doc_sin_deteccion += 1
             paginas_sin_deteccion += 1
             total_paginas += 1
@@ -126,9 +135,11 @@ for clase in sorted(conteo_global.keys()):
         "confianza_maxima": round(max(confs), 3)
     }
 
+nombre_modelo_base = os.path.splitext(os.path.basename(model_path))[0]
+
 reporte = {
     "configuracion": {
-        "modelo": "yolov10s-doclaynet.pt",
+        "modelo": os.path.basename(model_path),
         "umbral_confianza": UMBRAL_CONFIANZA,
         "clases_modelo": list(nombres_clases.values())
     },
@@ -143,7 +154,7 @@ reporte = {
     "detalle_por_documento": detalle_por_documento
 }
 
-ruta_reporte = os.path.join(output_folder, f"reporte_conf_{UMBRAL_CONFIANZA:.2f}.json")
+ruta_reporte = os.path.join(output_folder, f"reporte_{nombre_modelo_base}_conf_{UMBRAL_CONFIANZA:.2f}.json")
 with open(ruta_reporte, "w", encoding="utf-8") as f:
     json.dump(reporte, f, indent=2, ensure_ascii=False)
 

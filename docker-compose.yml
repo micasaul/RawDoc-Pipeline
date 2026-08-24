@@ -7,6 +7,8 @@ services:
       - ./src:/app/src
       - ./data:/app/data
       - ./runs:/app/runs
+      - ./docs:/app/docs
+      - ./yolov11m-doclaynet.pt:/app/yolov11m-doclaynet.pt
     stdin_open: true
     tty: true
     command: bash
