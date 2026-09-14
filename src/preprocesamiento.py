@@ -1,75 +1,227 @@
+"""
+Módulo de Preprocesamiento: Conversión de PDFs a imágenes de alta resolución para OCR.
+
+Características:
+- Optimización de memoria O(1) vía streaming directo a disco con Poppler (paths_only=True).
+- Salida en formato lossless PNG a 300 DPI nativos.
+- Zero-padding en nomenclatura de archivos (ej. pagina_0001.png).
+- Procesamiento atómico para evitar datasets inconsistentes o parcialmente procesados.
+- Verificación estricta de integridad de páginas mediante pdfinfo.
+"""
+
 import os
+import re
+import shutil
+import logging
+import argparse
+from pathlib import Path
+from typing import Optional, List
+
 from pdf2image import convert_from_path
+from pdf2image.pdf2image import pdfinfo_from_path
 
-def pdf_a_imagenes(ruta_pdf, carpeta_salida):
-    if not os.path.exists(carpeta_salida):
-        os.makedirs(carpeta_salida)
-        print(f"Carpeta creada: {carpeta_salida}")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S"
+)
+logger = logging.getLogger("preprocesamiento")
 
-    if not os.path.exists(ruta_pdf):
-        print(f"Error: El archivo PDF no existe en {ruta_pdf}")
-        return
+POPPLER_DEFAULT_WINDOWS = r"C:\poppler\Library\bin"
 
-    print(f"Cargando el PDF: {ruta_pdf}...")
-    
-    # Lógica multiplataforma para Poppler
-    # En Windows necesitamos la ruta manual, en Linux/Docker suele estar en el PATH global.
-    ruta_poppler = r"C:\poppler\Library\bin" if os.name == 'nt' else None
-    
+
+def obtener_ruta_poppler() -> Optional[str]:
+    """Determina la ruta de binarios de Poppler según SO y variables de entorno."""
+    env_path = os.environ.get("POPPLER_PATH")
+    if env_path and os.path.exists(env_path):
+        return env_path
+    if os.name == "nt" and os.path.exists(POPPLER_DEFAULT_WINDOWS):
+        return POPPLER_DEFAULT_WINDOWS
+    return None
+
+
+def extraer_numero_pagina(ruta_archivo: Path) -> int:
+    """
+    Extrae el número de página de los nombres temporales generados por Poppler.
+    Ejemplo: 'uuid-01.png' -> 1, 'uuid-10.png' -> 10.
+    """
+    coincidencia = re.search(r"-(\d+)\.[a-zA-Z0-9]+$", ruta_archivo.name)
+    return int(coincidencia.group(1)) if coincidencia else 0
+
+
+def pdf_a_imagenes(
+    ruta_pdf: Path,
+    carpeta_salida: Path,
+    dpi: int = 300,
+    formato: str = "png",
+    hilos: int = 4
+) -> bool:
+    """
+    Convierte un documento PDF en imágenes de alta resolución (una por página).
+
+    Utiliza paths_only=True para volcar directamente el renderizado a disco,
+    garantizando un consumo de memoria constante O(1) independientemente del
+    tamaño o número de páginas del documento.
+    """
+    if not ruta_pdf.is_file():
+        logger.error("El archivo PDF no existe: %s", ruta_pdf)
+        return False
+
+    ruta_poppler = obtener_ruta_poppler()
+
+    # 1. Obtener número total de páginas esperado según metadatos del PDF
     try:
-        paginas = convert_from_path(ruta_pdf, poppler_path=ruta_poppler)
+        info_pdf = pdfinfo_from_path(str(ruta_pdf), poppler_path=ruta_poppler)
+        total_paginas_esperadas = int(info_pdf.get("Pages", 0))
+        if total_paginas_esperadas <= 0:
+            logger.error("El documento %s reporta 0 páginas.", ruta_pdf.name)
+            return False
+    except Exception as exc:
+        logger.error("No se pudo leer la metadata del PDF %s: %s", ruta_pdf.name, exc)
+        return False
 
-        for index, pagina in enumerate(paginas):
-            nombre_archivo = os.path.join(carpeta_salida, f"pagina_{index + 1}.jpg")
-            pagina.save(nombre_archivo, 'JPEG')
-            print(f"[OK] Guardada: {nombre_archivo}")
+    extension = formato.lower().lstrip(".")
 
-        print("¡Proceso terminado con éxito!")
-    except Exception as e:
-        print(f"Error durante la conversión: {e}")
+    # 2. Comprobar si ya fue procesado íntegramente
+    if carpeta_salida.is_dir():
+        imagenes_existentes = list(carpeta_salida.glob(f"pagina_*.{extension}"))
+        if len(imagenes_existentes) == total_paginas_esperadas:
+            logger.info(
+                "[SKIP] %s ya procesado (%d/%d páginas presentes).",
+                ruta_pdf.name, len(imagenes_existentes), total_paginas_esperadas
+            )
+            return True
+        elif imagenes_existentes:
+            logger.warning(
+                "[REINTENTO] %s incompleto (%d/%d páginas). Limpiando y reprocesando...",
+                ruta_pdf.name, len(imagenes_existentes), total_paginas_esperadas
+            )
+            shutil.rmtree(carpeta_salida)
 
-def procesar_todos_los_pdfs(carpeta_entrada, carpeta_salida_base):
-    """Recorre todos los PDFs en carpeta_entrada y los convierte a imágenes."""
-    if not os.path.exists(carpeta_entrada):
-        print(f"Error: La carpeta de entrada no existe: {carpeta_entrada}")
-        return
+    # 3. Directorio temporal de staging para garantizar atomicidad
+    directorio_staging = carpeta_salida.parent / f".staging_{carpeta_salida.name}"
+    if directorio_staging.exists():
+        shutil.rmtree(directorio_staging)
+    directorio_staging.mkdir(parents=True, exist_ok=True)
 
-    # Filtramos solo los archivos que terminan en .pdf (ignorando mayúsculas/minúsculas)
-    archivos_pdf = [f for f in os.listdir(carpeta_entrada) if f.lower().endswith('.pdf')]
+    logger.info(
+        "Convirtiendo: %s (%d páginas @ %d DPI, formato %s)...",
+        ruta_pdf.name, total_paginas_esperadas, dpi, extension.upper()
+    )
+
+    try:
+        # Renderizado en streaming directo a disco (sin cargar mapas de bits en Python RAM)
+        rutas_temporales_str: List[str] = convert_from_path(
+            pdf_path=str(ruta_pdf),
+            dpi=dpi,
+            output_folder=str(directorio_staging),
+            fmt=extension,
+            paths_only=True,
+            thread_count=hilos,
+            poppler_path=ruta_poppler
+        )
+
+        archivos_generados = [Path(p) for p in rutas_temporales_str]
+
+        # Ordenar de forma natural según el número de página devuelto por Poppler
+        archivos_generados.sort(key=extraer_numero_pagina)
+
+        if len(archivos_generados) != total_paginas_esperadas:
+            raise RuntimeError(
+                f"Discrepancia en páginas: se esperaban {total_paginas_esperadas}, "
+                f"pero se generaron {len(archivos_generados)} archivos."
+            )
+
+        # Renombrar con zero-padding (ej. pagina_0001.png) para orden lexicográfico estricto
+        for idx, temp_file in enumerate(archivos_generados, start=1):
+            destino_final = directorio_staging / f"pagina_{idx:04d}.{extension}"
+            temp_file.rename(destino_final)
+
+        # Promover directorio de staging a destino final de forma atómica
+        if carpeta_salida.exists():
+            shutil.rmtree(carpeta_salida)
+        directorio_staging.rename(carpeta_salida)
+
+        logger.info(
+            "[OK] %s convertido con éxito -> %s (%d páginas)",
+            ruta_pdf.name, carpeta_salida.name, total_paginas_esperadas
+        )
+        return True
+
+    except Exception as exc:
+        logger.exception("Fallo en la conversión de %s: %s", ruta_pdf.name, exc)
+        if directorio_staging.exists():
+            shutil.rmtree(directorio_staging)
+        return False
+
+
+def procesar_todos_los_pdfs(
+    carpeta_entrada: Path,
+    carpeta_salida_base: Path,
+    dpi: int = 300,
+    formato: str = "png",
+    hilos: int = 4
+) -> dict:
+    """Recorre todos los PDFs en carpeta_entrada y los procesa a imágenes de alta calidad."""
+    if not carpeta_entrada.exists():
+        logger.error("La carpeta de entrada no existe: %s", carpeta_entrada)
+        return {"total": 0, "exitosos": 0, "fallidos": 0}
+
+    carpeta_salida_base.mkdir(parents=True, exist_ok=True)
+
+    archivos_pdf = sorted([f for f in carpeta_entrada.glob("*.pdf") if f.is_file()])
 
     if not archivos_pdf:
-        print(f"No se encontraron archivos PDF en: {carpeta_entrada}")
-        return
+        logger.warning("No se encontraron archivos PDF en: %s", carpeta_entrada)
+        return {"total": 0, "exitosos": 0, "fallidos": 0}
 
-    print(f"Se encontraron {len(archivos_pdf)} PDF(s) en la carpeta.\n")
+    logger.info("Encontrados %d documento(s) PDF en %s", len(archivos_pdf), carpeta_entrada)
 
-    procesados = 0
-    salteados = 0
+    exitosos = 0
+    fallidos = 0
 
-    for archivo in archivos_pdf:
-        ruta_pdf = os.path.join(carpeta_entrada, archivo)
+    for ruta_pdf in archivos_pdf:
+        nombre_sin_extension = ruta_pdf.stem
+        carpeta_destino = carpeta_salida_base / f"{nombre_sin_extension}-imagenes"
+        
+        ok = pdf_a_imagenes(
+            ruta_pdf=ruta_pdf,
+            carpeta_salida=carpeta_destino,
+            dpi=dpi,
+            formato=formato,
+            hilos=hilos
+        )
+        if ok:
+            exitosos += 1
+        else:
+            fallidos += 1
 
-        # Creamos una subcarpeta por cada PDF usando su nombre (sin la extensión .pdf)
-        nombre_sin_extension = os.path.splitext(archivo)[0]
-        carpeta_destino = os.path.join(carpeta_salida_base, f"{nombre_sin_extension}-imagenes")
-
-        # Si la carpeta ya existe y tiene archivos, lo salteamos
-        if os.path.exists(carpeta_destino) and os.listdir(carpeta_destino):
-            print(f"[SKIP] {archivo} ya fue procesado ({len(os.listdir(carpeta_destino))} imagenes existentes)")
-            salteados += 1
-            continue
-
-        print(f"--- Procesando: {archivo} ---")
-        pdf_a_imagenes(ruta_pdf, carpeta_destino)
-        procesados += 1
-        print()  # Línea en blanco para separar visualmente cada PDF
-
-    print(f"\n=== Resumen: {procesados} procesado(s), {salteados} salteado(s) ===")
+    logger.info(
+        "=== Resumen: %d procesado(s) exitosamente, %d fallido(s) de %d total ===",
+        exitosos, fallidos, len(archivos_pdf)
+    )
+    return {"total": len(archivos_pdf), "exitosos": exitosos, "fallidos": fallidos}
 
 
-if __name__ == '__main__':
-    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    carpeta_raw = os.path.join(base_path, "data", "raw")
-    carpeta_processed = os.path.join(base_path, "data", "processed")
+def main():
+    parser = argparse.ArgumentParser(description="Conversión de PDFs a imágenes optimizadas para OCR")
+    parser.add_argument("--dpi", type=int, default=300, help="Resolución en DPI (default: 300)")
+    parser.add_argument("--format", type=str, default="png", choices=["png", "jpeg", "tiff"], help="Formato de imagen (default: png)")
+    parser.add_argument("--threads", type=int, default=4, help="Cantidad de hilos para Poppler (default: 4)")
+    args = parser.parse_args()
 
-    procesar_todos_los_pdfs(carpeta_raw, carpeta_processed)
+    base_path = Path(__file__).resolve().parent.parent
+    carpeta_raw = base_path / "data" / "raw"
+    carpeta_processed = base_path / "data" / "processed"
+
+    procesar_todos_los_pdfs(
+        carpeta_entrada=carpeta_raw,
+        carpeta_salida_base=carpeta_processed,
+        dpi=args.dpi,
+        formato=args.format,
+        hilos=args.threads
+    )
+
+
+if __name__ == "__main__":
+    main()
