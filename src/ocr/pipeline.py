@@ -67,7 +67,7 @@ def procesar_documento_ocr(
     motor_ocr: MotorOCR,
     base_dir: Path,
     filtrar_solapamientos: bool = True,
-    padding: int = 4
+    padding: int = 8
 ) -> Dict[str, Any]:
     """
     Procesa todas las regiones aptas para OCR de un documento dado su layout.json.
@@ -199,7 +199,8 @@ def ejecutar_pipeline_ocr_batch(
     motor_ocr: MotorOCR,
     base_dir: Path,
     filtro_doc: Optional[str] = None,
-    filtrar_solapamientos: bool = True
+    filtrar_solapamientos: bool = True,
+    padding: int = 8
 ) -> Dict[str, Any]:
     """
     Ejecuta el OCR en lote sobre todos los documentos enumerados en el manifest.json de YOLO.
@@ -233,7 +234,8 @@ def ejecutar_pipeline_ocr_batch(
             carpeta_salida_documento=salida_doc,
             motor_ocr=motor_ocr,
             base_dir=base_dir,
-            filtrar_solapamientos=filtrar_solapamientos
+            filtrar_solapamientos=filtrar_solapamientos,
+            padding=padding
         )
 
         total_caracteres_batch += res_doc.get("total_caracteres", 0)
@@ -279,6 +281,7 @@ def main():
     parser.add_argument("--output", type=str, default="runs/ocr", help="Directorio de salida para texto y OCR")
     parser.add_argument("--lang", type=str, default="spa", help="Idioma de Tesseract (default: spa)")
     parser.add_argument("--doc", type=str, default=None, help="Filtro para procesar un documento específico")
+    parser.add_argument("--padding", type=int, default=8, help="Margen de padding en píxeles para recorte de regiones (default: 8)")
     parser.add_argument("--no_filter_overlaps", action="store_true", help="Desactiva el filtrado de cajas anidadas")
     args = parser.parse_args()
 
@@ -303,7 +306,8 @@ def main():
         motor_ocr=motor,
         base_dir=base_path,
         filtro_doc=args.doc,
-        filtrar_solapamientos=not args.no_filter_overlaps
+        filtrar_solapamientos=not args.no_filter_overlaps,
+        padding=args.padding
     )
 
 
