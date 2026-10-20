@@ -26,11 +26,12 @@ Pipeline integral de **Document AI** diseñado para procesar actos administrativ
 
 ## 📁 Estructura del Repositorio
 
-* `data/raw/`: Documentos PDF originales del Consejo Superior (10 archivos, 148 páginas).
+* `data/raw/`: Documentos PDF originales del Consejo Superior (20 archivos, 250 páginas: 10 ordenanzas y 10 resoluciones).
 * `data/processed/`: Imágenes renderizadas a 300 DPI nativos con zero-padding (`pagina_0001.png`).
 * `docs/`:
   * `INFORME.md`: **Informe Técnico Final** con fundamentación, benchmark de modelos, análisis de errores y conclusiones.
-  * `ground_truth.md`: Definición formal del dataset de referencia y validación manual.
+  * `ground_truth.md`: Definición formal del dataset de referencia, validación manual y métricas de evaluación.
+  * `experimento_confianza.xlsx`: Planilla congelada con el Ground Truth manual y métricas consolidadas del corpus de 20 documentos.
 * `runs/`:
   * `detect/predict_yolov11m-doclaynet/`: Imágenes anotadas con bounding boxes y metadatos `layout.json`.
   * `ocr/`: Resultados de extracción de texto estructurado (`documento.md`, `ocr_results.json`, `ocr_manifest.json`).

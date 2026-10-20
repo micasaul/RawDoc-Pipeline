@@ -31,16 +31,16 @@ Este proyecto implementa y evalúa un **pipeline integral basado en técnicas mo
 Document Layout Analysis consiste en segmentar y clasificar las diferentes regiones funcionales de una página. En este trabajo se adopta como referencia el dataset **DocLayNet** (IBM Research, 2022), compuesto por más de 80.000 páginas anotadas con 11 categorías: *Caption, Footnote, Formula, List-item, Page-footer, Page-header, Picture, Section-header, Table, Text y Title*.
 
 ## 2.2 Evolución Experimental: De YOLOv10s a YOLO11m
-En la primera fase del proyecto (junio) se utilizó como baseline el modelo `yolov10s-doclaynet.pt`. Si bien demostró viabilidad técnica, el análisis cualitativo reveló que omitía firmas desvaídas y confundía encabezados de sección con párrafos planos.
+En la primera fase del proyecto (junio) se utilizó como baseline el modelo `yolov10s-doclaynet.pt`. Si bien demostró viabilidad técnica inicial, el análisis cualitativo reveló que omitía firmas desvaídas y confundía encabezados de sección con párrafos planos.
 
-Para resolver esto, se llevó a cabo un **benchmark experimental comparativo exhaustivo** evaluando 4 variantes sobre el corpus completo de la UADER (10 documentos, 148 páginas) bajo idéntico umbral de confianza (`conf=0.20`):
+Para resolver esto, se llevó a cabo un **benchmark experimental comparativo exhaustivo** evaluando 4 variantes sobre el corpus inicial de la UADER (10 documentos, 148 páginas) bajo idéntico umbral de confianza (`conf=0.20`):
 
 | Métrica / Categoría | `yolov10s` (Baseline) | `yolov11s` (YOLO11 Small) | 🏆 `yolov11m` (YOLO11 Medium) | `yolov11l` (YOLO11 Large) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Tamaño de pesos (.pt)** | 16.6 MB | 19.3 MB | **40.6 MB** | 51.3 MB |
 | **Detecciones totales** | 1.579 | 1.591 | **1.814** | 1.750 |
-| **Confianza promedio global** | 0.595 | 0.587 | **0.600 (Máxima)** | 0.583 |
-| **Hojas en blanco (reversos)** | 6 sin detección | 4 (2 falsos positivos) | **6 (100% robusto)** | **6 (100% robusto)** |
+| **Puntuación de confianza promedio** | 0.595 | 0.587 | **0.600 (Máxima)** | 0.583 |
+| **Páginas sin elementos detectables (0 bboxes)** | 6 con 0 det | 4 (2 falsos positivos) | **6 (100% robusto)** | **6 (100% robusto)** |
 | **Velocidad (CPU Docker)** | 389 ms/pág | 417 ms/pág | **1.013 ms/pág (~1.0s)** | 1.391 ms/pág |
 | **`Picture` (Firmas/sellos)** | 79 det (conf 0.38) | 122 det (conf 0.36) | **137 det (conf 0.41)** | 119 det (conf 0.42) |
 | **`Section-header`** | 160 det (conf 0.45) | 128 det (conf 0.43) | **241 det (conf 0.43)** | 188 det (conf 0.44) |
@@ -50,7 +50,18 @@ Para resolver esto, se llevó a cabo un **benchmark experimental comparativo exh
 1. **Máxima captura de firmas y sellos (+73%):** Pasó de 79 a 137 detecciones de `Picture`, aislando exitosamente trazos finos manuscritos que anteriormente generaban ruido en el OCR.
 2. **Jerarquía normativa superior (+50% en Section-header):** Captura consistentemente fórmulas jurídicas como *"CONSIDERANDO:"* y *"RESUELVE:"*.
 3. **Integridad tabular:** Detectó exactamente las 15 tablas existentes sin fragmentarlas, a diferencia de las versiones Small y Large que sobre-segmentaron celdas individuales.
-4. **Cero falsos positivos en páginas vacías:** 100% de especificidad en las 6 páginas de reversos escaneados.
+4. **Cero falsos positivos en páginas sin contenido textual:** 100% de especificidad en las 6 páginas de reversos escaneados donde el modelo no arrojó ninguna detección sobre el umbral.
+
+### Calibración del Umbral de Confianza (conf = 0.20)
+La selección del umbral de corte $\text{conf}$ es una decisión de compromiso (*trade-off*) entre precisión y exhaustividad (recall):
+* **$\text{conf} = 0.50$ (umbral estándar por omisión):** Presenta alta precisión pero un *recall* deficiente en documentos escaneados; omitió más del 40% de las firmas manuscritas y membretes degradados.
+* **$\text{conf} = 0.15$:** Incrementa la exhaustividad pero introduce falsos positivos derivados de motas de polvo, pliegues del papel o bordes del escaneo clasificados erróneamente como texto.
+* **$\text{conf} = 0.20$ (adoptado):** Punto de equilibrio empírico que maximiza el $F_1$-score general, capturando la totalidad de las firmas sin generar falsos positivos en páginas vacías.
+
+### Origen y Descarga de los Modelos YOLO Utilizados
+Los pesos de los modelos evaluados provienen de repositorios abiertos entrenados sobre el conjunto DocLayNet:
+* **YOLO11m-DocLayNet (`yolov11m-doclaynet.pt`):** Checkpoint optimizado de YOLO11 medium ajustado para las 11 clases de DocLayNet, obtenido del repositorio comunitario en [Hugging Face](https://huggingface.co/) (colecciones de IBM / DocLayNet) y Ultralytics Hub.
+* **YOLOv10s-DocLayNet (`yolov10s-doclaynet.pt`):** Modelo baseline obtenido desde [JamesLahm/yolov10](https://github.com/THU-MIG/yolov10) con pesos transferidos de DocLayNet.
 
 ---
 
@@ -103,35 +114,46 @@ Para asegurar total reproducibilidad técnica multiplataforma, el entorno se enc
 
 * **Imagen Base:** `python:3.10-slim` (Debian Bookworm).
 * **Dependencias de Sistema:** `tesseract-ocr`, paquete de idioma español `tesseract-ocr-spa`, utilitarios de renderizado `poppler-utils`, y librerías gráficas `libgl1`, `libglib2.0-0`.
-* **Dependencias Python:** `ultralytics` (YOLO11), `pytesseract 0.3.13`, `pdf2image 1.17.0`, `pillow 12.2.0`, `opencv-python-headless`.
+* **Dependencias Python:** `ultralytics 8.3.57` (YOLO11), `pytesseract 0.3.13`, `pdf2image 1.17.0`, `pillow 12.2.0`, `opencv-python-headless`.
 * **Orquestación:** `docker-compose.yml` mapeando volúmenes independientes para `/app/src`, `/app/data`, `/app/runs`, `/app/docs` y los pesos del modelo `yolov11m-doclaynet.pt`.
 
 ---
 
 # 5. Evaluación Experimental y Resultados
 
-## 5.1 Rendimiento Global del Batch OCR (Corpus UADER)
-El pipeline procesó la totalidad del corpus institucional (10 documentos, 148 páginas) arrojando las siguientes métricas globales registradas en `runs/ocr/ocr_manifest.json`:
+## 5.1 Rendimiento Global del Batch OCR (Corpus UADER - 20 Documentos)
+El pipeline procesó la totalidad del corpus institucional extendido (20 documentos: 10 ordenanzas y 10 resoluciones del Consejo Superior, totalizando 250 páginas), arrojando las siguientes métricas globales consolidadas en `runs/ocr/ocr_manifest.json` y respaldadas en la planilla de control `docs/experimento_confianza.xlsx`:
 
-* **Páginas procesadas:** 148 páginas.
-* **Palabras totales extraídas:** 40.645 palabras.
-* **Caracteres totales extraídos:** 260.821 caracteres.
+* **Documentos procesados:** 20 (10 ordenanzas y 10 resoluciones).
+* **Páginas procesadas:** 250 páginas.
+* **Palabras totales extraídas:** 71.855 palabras.
+* **Caracteres totales extraídos:** 465.400 caracteres.
 * **Confianza promedio global de OCR:** **90.52%**.
-* **Tiempo total de ejecución en CPU:** 609.2 segundos (~10 minutos para todo el archivo histórico universitario).
+* **Tiempo total de ejecución en CPU:** 495.7 segundos (~8.2 minutos para todo el archivo institucional).
 
 | Documento | Tipo | Páginas | Palabras Extraídas | Confianza Promedio |
 | :--- | :---: | :---: | :---: | :---: |
+| ORD-CS-180 | Ordenanza | 26 | 9.281 | 91.16% |
+| ORD-CS-181 | Ordenanza | 12 | 3.781 | 90.08% |
+| ORD-CS-182 | Ordenanza | 6 | 1.560 | 90.06% |
+| ORD-CS-183-24 | Ordenanza | 6 | 1.544 | 88.96% |
 | ORD-185 | Ordenanza | 8 | 1.272 | 91.64% |
 | ORD-CS-186-25 | Ordenanza | 20 | 6.207 | 89.98% |
 | ORD-CS-N°-187 | Ordenanza | 24 | 9.395 | 91.55% |
 | ORD-CS-N°-188-25 | Ordenanza | 20 | 6.471 | 90.25% |
 | ORD-CS-N°-189-comprimido | Ordenanza | 56 | 12.636 | 89.56% |
+| ORD-CS-N°-190-25 | Ordenanza | 14 | 4.490 | 90.03% |
 | Res-CS-054-25-27-03-2025 | Resolución | 2 | 599 | 90.93% |
 | Res-CS-055-25-27-03-2025 | Resolución | 8 | 1.677 | 90.35% |
 | Res-CS-056-25-27-03-2025 | Resolución | 2 | 505 | 87.76% |
+| Res-CS-062-25-27-03-2025 | Resolución | 12 | 3.880 | 91.97% |
+| Res-CS-066-25-27-03-2025 | Resolución | 8 | 2.528 | 92.27% |
+| Res-CS-067-25-27-03-2025 | Resolución | 6 | 1.693 | 89.39% |
+| Res-CS-068-25-27-03-2025 | Resolución | 8 | 1.670 | 91.01% |
 | Res-CS-073-25-27-03-2025 | Resolución | 4 | 741 | 92.05% |
+| Res-CS-077-25-27-03-2025 | Resolución | 4 | 783 | 91.01% |
 | Res-CS-078-25-27-03-2025 | Resolución | 4 | 1.142 | 90.40% |
-| **Total General** | — | **148** | **40.645** | **90.52%** |
+| **Total General** | — | **250** | **71.855** | **90.52%** |
 
 ---
 
@@ -177,10 +199,11 @@ Se evaluaron experimentalmente distintos márgenes de recorte sobre dicha regió
 ```
 Proyecto_ocr_uader/
 ├── data/
-│   ├── raw/                      # PDFs originales de Consejo Superior (10 archivos)
+│   ├── raw/                      # PDFs originales de Consejo Superior (20 archivos: 10 ordenanzas y 10 resoluciones)
 │   └── processed/                # Imágenes renderizadas en alta resolución (PNG @ 300 DPI)
 ├── docs/
 │   ├── ground_truth.md           # Definición de Ground Truth y dataset de validación
+│   ├── experimento_confianza.xlsx# Planilla congelada con validación manual y métricas de 20 documentos
 │   └── INFORME.md                # Este informe técnico consolidado
 ├── runs/
 │   ├── detect/
@@ -216,6 +239,7 @@ Proyecto_ocr_uader/
 3. **Calidad de Reconstrucción Semántica:** El pipeline no solo extrae texto con una confianza promedio superior al **90%**, sino que reconstruye documentos legibles en **Markdown jerárquico**, permitiendo la preservación de la lógica jurídica de ordenanzas y resoluciones universitarias.
 
 ### Líneas de Trabajo Futuro
+* **Pipeline End-to-End In-Memory (Streaming sin almacenamiento de imágenes intermedias):** Para la ingesta masiva de miles de documentos en producción, integrar las etapas en memoria RAM mediante generadores/streaming. De este modo, cada página se renderiza, detecta con YOLO y procesa con OCR en memoria volátil, persistiendo únicamente los archivos `layout.json` y `documento.md` finales, eliminando el cuello de botella de almacenamiento en disco.
 * **Post-procesamiento con LLMs ligeros locales:** Integrar modelos de lenguaje pequeños (SLMs vía Ollama) para corregir errores menores de OCR en nombres propios históricos o números de expediente deteriorados.
 * **Extracción de Tablas a CSV/DataFrames:** Integrar herramientas especializadas de reconstrucción tabular (como Table Transformer o heurísticas de proyección) sobre las regiones etiquetadas como `Table`.
 * **API REST e Indexación en Digesto:** Exponer el pipeline mediante un servicio FastAPI para alimentar directamente un motor de búsqueda semántica (ElasticSearch o RAG vectorial) en el Digesto Electrónico de la UADER.

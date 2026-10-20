@@ -210,6 +210,21 @@ def procesar_documento(
         logger.warning("No se encontraron imágenes en %s", carpeta_documento)
         return {"document": carpeta_documento.name, "pages": []}
 
+    # Comprobar si ya fue procesado íntegramente
+    ruta_json = carpeta_salida / "layout.json"
+    if ruta_json.is_file():
+        try:
+            with open(ruta_json, "r", encoding="utf-8") as f:
+                datos_existentes = json.load(f)
+            if len(datos_existentes.get("pages", [])) == len(archivos_imagen):
+                logger.info(
+                    "[SKIP] %s ya procesado con YOLO (%d/%d páginas presentes).",
+                    carpeta_documento.name, len(datos_existentes.get("pages", [])), len(archivos_imagen)
+                )
+                return datos_existentes
+        except Exception:
+            pass
+
     logger.info("Detectando layout en %s (%d páginas)...", carpeta_documento.name, len(archivos_imagen))
 
     paginas_resultado = []

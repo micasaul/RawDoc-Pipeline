@@ -16,3 +16,6 @@ runs/
 
 # Modelo preentrenado
 *.pt
+
+# Documentos PDF generados
+*.pdf

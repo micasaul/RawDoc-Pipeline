@@ -81,10 +81,25 @@ def procesar_documento_ocr(
     doc_name = datos_layout.get("document_name", ruta_layout_json.parent.name)
     paginas = datos_layout.get("pages", [])
 
+    carpeta_salida_documento.mkdir(parents=True, exist_ok=True)
+
+    # Comprobar si ya fue procesado íntegramente por el OCR
+    ruta_ocr_json = carpeta_salida_documento / "ocr_results.json"
+    if ruta_ocr_json.is_file():
+        try:
+            with open(ruta_ocr_json, "r", encoding="utf-8") as f:
+                datos_ocr_existente = json.load(f)
+            if datos_ocr_existente.get("total_pages") == len(paginas):
+                logger.info(
+                    "[SKIP OCR] %s ya procesado con OCR (%d/%d páginas presentes).",
+                    doc_name, datos_ocr_existente.get("total_pages"), len(paginas)
+                )
+                return datos_ocr_existente
+        except Exception:
+            pass
+
     logger.info("Iniciando OCR en: %s (%d páginas)...", doc_name, len(paginas))
     start_time = time.time()
-
-    carpeta_salida_documento.mkdir(parents=True, exist_ok=True)
 
     paginas_procesadas = []
     lineas_markdown_global = [f"# Documento: {doc_name}\n\n---\n"]
