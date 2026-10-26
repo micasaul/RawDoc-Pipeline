@@ -14,8 +14,9 @@ __pycache__/
 # Resultados de inferencia (imágenes pesadas)
 runs/
 
-# Modelo preentrenado
+# Modelos preentrenados (se ignora cualquier otro .pt excepto el oficial de producción)
 *.pt
+!yolov11m-doclaynet.pt
 
 # Documentos PDF generados
 *.pdf
