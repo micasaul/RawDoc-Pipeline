@@ -3,20 +3,20 @@ venv/
 env/
 .env
 
-# Carpetas de datos (No subir PDFs ni imágenes al repo)
-data/raw/
+# Carpetas de datos procesados (imágenes renderizadas temporales)
 data/processed/
 
 # Archivos cacheados de Python
 __pycache__/
 *.pyc
 
-# Resultados de inferencia (imágenes pesadas)
+# Resultados de inferencia (imágenes pesadas y salidas temporales)
 runs/
 
 # Modelos preentrenados (se ignora cualquier otro .pt excepto el oficial de producción)
 *.pt
 !yolov11m-doclaynet.pt
 
-# Documentos PDF generados
+# Documentos PDF generados (excepto el corpus oficial en data/raw/)
 *.pdf
+!data/raw/*.pdf
