@@ -7,9 +7,8 @@ from ultralytics import YOLO
 
 def evaluar_modelo(model_path, processed_folder, conf_threshold=0.20, extensions=('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp')):
     model_name = os.path.splitext(os.path.basename(model_path))[0]
-    print(f"\n=======================================================")
-    print(f"🚀 Evaluando modelo: {model_name} ({model_path})")
-    print(f"=======================================================")
+
+    print(f"Evaluando modelo: {model_name} ({model_path})")
     
     start_load = time.time()
     model = YOLO(model_path)
@@ -127,7 +126,7 @@ def main():
     for m_arg in args.models:
         m_path = os.path.join(base_path, m_arg) if not os.path.isabs(m_arg) else m_arg
         if not os.path.exists(m_path):
-            print(f"⚠️ Advertencia: Modelo {m_path} no encontrado. Se omite.")
+            print(f"Advertencia: Modelo {m_path} no encontrado. Se omite.")
             continue
         res = evaluar_modelo(m_path, processed_folder, conf_threshold=args.conf)
         resultados.append(res)
@@ -142,7 +141,7 @@ def main():
     sep_line = "-" * (25 + len(resultados) * (col_w + 3))
 
     print("\n" + "=" * (25 + len(resultados) * (col_w + 3)))
-    print(" 📊 TABLA COMPARATIVA MULTI-MODELO: BENCHMARK DOCLAYNET EN UADER")
+    print(" TABLA COMPARATIVA MULTI-MODELO: BENCHMARK DOCLAYNET EN UADER")
     print("=" * (25 + len(resultados) * (col_w + 3)))
     print(f"{'Métrica / Categoría':<25} | {header_models}")
     print(sep_line)
@@ -192,7 +191,7 @@ def main():
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(reporte_comparativo, f, indent=2, ensure_ascii=False)
 
-    print(f"\n💾 Benchmark multi-modelo guardado en: {out_file}\n")
+    print(f"\n Benchmark multi-modelo guardado en: {out_file}\n")
 
 if __name__ == "__main__":
     main()

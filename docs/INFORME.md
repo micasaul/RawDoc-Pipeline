@@ -1,4 +1,4 @@
-# Informe Técnico Final: Pipeline Inteligente para Análisis Estructural y OCR Selectivo de Documentos Normativos
+# Pipeline Inteligente para Análisis Estructural y OCR Selectivo de Documentos Normativos
 
 **Institución:** Universidad Autónoma de Entre Ríos (UADER)  
 **Materia:** Inteligencia Artificial / Práctica Profesional  

@@ -181,7 +181,7 @@ def main():
         ]
 
     print("\n" + "=" * 90)
-    print(" 🔬 EXPERIMENTO COMPARATIVO: OCR COMPLETO vs. OCR SELECTIVO POR LAYOUT")
+    print("  EXPERIMENTO COMPARATIVO: OCR COMPLETO vs. OCR SELECTIVO POR LAYOUT")
     print("=" * 90)
 
     motor = MotorOCR(idioma="spa")
@@ -194,7 +194,7 @@ def main():
         ruta_layout = layout_base / doc_name / "layout.json"
 
         if not ruta_img.exists() or not ruta_layout.exists():
-            print(f"⚠️ Omitiendo {doc_name}/{page_name}: archivos no encontrados.")
+            print(f" Omitiendo {doc_name}/{page_name}: archivos no encontrados.")
             continue
 
         with open(ruta_layout, "r", encoding="utf-8") as f:
@@ -207,7 +207,7 @@ def main():
                 regiones = pag.get("regions", [])
                 break
 
-        print(f"\n📄 Analizando: {doc_name} -> {page_name}")
+        print(f"\n Analizando: {doc_name} -> {page_name}")
         print(f"   Descripción: {caso['descripcion']}")
         print(f"   Regiones totales detectadas por YOLO: {len(regiones)}")
 
@@ -233,11 +233,11 @@ def main():
 
         print(f"   [OCR Completo]  Palabras: {res_completo['total_palabras']:>4} | Confianza: {res_completo['confianza_promedio']:>5.1f}% | Caracteres de ruido: {res_completo['caracteres_ruido']:>3} ({res_completo['pct_ruido']}%)")
         print(f"   [OCR Selectivo] Palabras: {res_selectivo['total_palabras']:>4} | Confianza: {res_selectivo['confianza_promedio']:>5.1f}% | Caracteres de ruido: {res_selectivo['caracteres_ruido']:>3} ({res_selectivo['pct_ruido']}%)")
-        print(f"   ✅ Reducción de ruido en firmas/sellos: {diff_ruido} caracteres eliminados ({pct_reduccion_ruido:.1f}% menos ruido)")
+        print(f"   Reducción de ruido en firmas/sellos: {diff_ruido} caracteres eliminados ({pct_reduccion_ruido:.1f}% menos ruido)")
 
     # Tabla resumen final
     print("\n" + "=" * 90)
-    print(" 📊 RESUMEN CUANTITATIVO COMPARATIVO")
+    print("RESUMEN CUANTITATIVO COMPARATIVO")
     print("=" * 90)
     print(f"{'Caso evaluado':<35} | {'OCR Completo (Ruido)':<22} | {'OCR Selectivo (Ruido)':<22} | {'Mejora Ruido'}")
     print("-" * 90)
@@ -253,7 +253,7 @@ def main():
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(resultados_comparativa, f, indent=2, ensure_ascii=False)
 
-    print(f"\n💾 Reporte experimental guardado en: {out_json}\n")
+    print(f"\nReporte experimental guardado en: {out_json}\n")
 
 
 if __name__ == "__main__":

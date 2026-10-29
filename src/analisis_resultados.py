@@ -94,7 +94,7 @@ for subfolder in subfolders:
         "detecciones_por_clase": dict(doc_conteo)
     }
 
-    print(f"\n📄 {subfolder}")
+    print(f"\n {subfolder}")
     print(f"   Páginas: {doc_paginas} | Sin detección: {doc_sin_deteccion}")
     print(f"   Detecciones: {doc_total} | Confianza promedio: {doc_conf_promedio:.2f}")
 
@@ -103,7 +103,7 @@ for subfolder in subfolders:
 
 print("\n" + "=" * 65)
 
-print("\n📊 RESUMEN GLOBAL")
+print("\n RESUMEN GLOBAL")
 print(f"   Documentos analizados:   {len(subfolders)}")
 print(f"   Páginas totales:         {total_paginas}")
 print(f"   Páginas sin detección:   {paginas_sin_deteccion}")
@@ -158,4 +158,4 @@ ruta_reporte = os.path.join(output_folder, f"reporte_{nombre_modelo_base}_conf_{
 with open(ruta_reporte, "w", encoding="utf-8") as f:
     json.dump(reporte, f, indent=2, ensure_ascii=False)
 
-print(f"\n✅ Reporte guardado en: {ruta_reporte}")
+print(f"\n Reporte guardado en: {ruta_reporte}")
