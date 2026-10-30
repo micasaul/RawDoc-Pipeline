@@ -175,8 +175,8 @@ def main():
             },
             {
                 "doc": "ORD-185-imagenes",
-                "page_file": "pagina_0008.png",
-                "descripcion": "Página final con múltiples firmas institucionales (Pág 8)"
+                "page_file": "pagina_0003.png",
+                "descripcion": "Página de cierre con firmas de autoridades y sellos (Pág 3)"
             }
         ]
 
