@@ -240,9 +240,9 @@ Proyecto_ocr_uader/
 
 ### Líneas de Trabajo Futuro
 * **Pipeline End-to-End In-Memory (Streaming sin almacenamiento de imágenes intermedias):** Para la ingesta masiva de miles de documentos en producción, integrar las etapas en memoria RAM mediante generadores/streaming. De este modo, cada página se renderiza, detecta con YOLO y procesa con OCR en memoria volátil, persistiendo únicamente los archivos `layout.json` y `documento.md` finales, eliminando el cuello de botella de almacenamiento en disco.
-* **Post-procesamiento con LLMs ligeros locales:** Integrar modelos de lenguaje pequeños (SLMs vía Ollama) para corregir errores menores de OCR en nombres propios históricos o números de expediente deteriorados.
+* **Escalabilidad y Transferencia a Otros Corpus Normativos:** Extender y evaluar el desempeño del pipeline sobre documentación legal y administrativa externa al ámbito académico (leyes provinciales, decretos ejecutivos y normativas nacionales).
 * **Extracción de Tablas a CSV/DataFrames:** Integrar herramientas especializadas de reconstrucción tabular (como Table Transformer o heurísticas de proyección) sobre las regiones etiquetadas como `Table`.
-* **API REST e Indexación en Digesto:** Exponer el pipeline mediante un servicio FastAPI para alimentar directamente un motor de búsqueda semántica (ElasticSearch o RAG vectorial) en el Digesto Electrónico de la UADER.
+* **API REST e Integración al Digesto Electrónico UADER:** Integrar el pipeline al flujo de ingesta del Digesto institucional para procesar sistemáticamente el acervo histórico de ordenanzas y resoluciones, alimentando con texto limpio y estructurado la base de datos normativa de la universidad.
 
 ---
 
