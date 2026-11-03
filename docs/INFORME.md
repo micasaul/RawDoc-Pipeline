@@ -163,9 +163,9 @@ En cumplimiento estricto con los objetivos de la materia, se diseñó un experim
 
 | Caso Evaluado | OCR Tradicional Completo | OCR Selectivo por Layout | Reducción de Ruido / Mejora |
 | :--- | :---: | :---: | :---: |
-| **Página de firmas institucionales** *(ORD-189, Pág 56)* | 15 líneas de basura (`,\no .\nds\nb\n+`) | **0 líneas basura (Página limpia)** | 🎯 **100.0% reducción de ruido** |
-| **Página final con múltiples firmas** *(ORD-185, Pág 8)* | 7 palabras erróneas (conf: 49.1%) | **0 palabras falsas (conf: 100%)** | 🎯 **100.0% reducción de ruido** |
-| **Página con firmas y sello al pie** *(Res-CS-054, Pág 2)* | Firmas leídas como caracteres corruptos | Firmas excluidas; solo texto institucional | 🎯 **Aislamiento perfecto de autoridades** |
+| **Reverso escaneado con motas** *(ORD-189, Pág 56)* | 15 líneas de basura (`,\no .\nds\nb\n+`) | **0 líneas basura (0 bboxes, 100% especificidad)** | 🎯 **100.0% reducción de ruido** |
+| **Reverso escaneado sin texto** *(ORD-185, Pág 8)* | 7 palabras erróneas por suciedad (conf: 49.1%) | **0 palabras falsas (0 bboxes)** | 🎯 **100.0% reducción de ruido** |
+| **Página con firmas y sello al pie** *(Res-CS-054, Pág 2 / ORD-185, Pág 3)* | Firmas leídas como caracteres corruptos | Firmas excluidas (`Picture`); solo texto institucional | 🎯 **Aislamiento perfecto de autoridades** |
 | **Página inicial de Ordenanza** *(ORD-185, Pág 1)* | Bloque plano indiferenciado | **Markdown semántico (`#`, `###`, `-`)** | 📖 **Jerarquía y orden de lectura preservados** |
 
 ### Hallazgo Clave del Experimento
